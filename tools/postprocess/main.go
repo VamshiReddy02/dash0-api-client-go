@@ -19,6 +19,8 @@
 //     named YAML*, and switch cases that call yaml.Unmarshal). The root package
 //     must not depend on any YAML library; YAML support belongs in the yaml/
 //     subpackage, and the TestNoYAMLDependency guard test enforces this.
+//  4. Add optional MemberSpec.Role support until the upstream OpenAPI schema
+//     includes it. This only models the field; the server must populate it.
 //
 // Usage: go run ./tools/postprocess generated.go
 package main
@@ -89,6 +91,7 @@ func main() {
 	renameConsts(file)
 	removeDeprecatedFields(file, fset)
 	stripYAMLHandling(file)
+	addMemberRole(file)
 	// Note: we intentionally do NOT remove duplicate struct fields. If
 	// oapi-codegen produces duplicates, the build should fail loudly so the
 	// OpenAPI spec bug is surfaced rather than silently papered over.
@@ -107,6 +110,37 @@ func main() {
 		fmt.Fprintf(os.Stderr, "close error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// addMemberRole bridges the missing response field in the upstream schema.
+// Preserve the generated field once upstream defines it.
+func addMemberRole(file *ast.File) {
+	ast.Inspect(file, func(n ast.Node) bool {
+		ts, ok := n.(*ast.TypeSpec)
+		if !ok || ts.Name.Name != "MemberSpec" {
+			return true
+		}
+		st, ok := ts.Type.(*ast.StructType)
+		if !ok {
+			return false
+		}
+		for _, field := range st.Fields.List {
+			for _, name := range field.Names {
+				if name.Name == "Role" {
+					return false
+				}
+			}
+		}
+		// Anchor the new field inside the struct so the printer keeps comments
+		// on subsequent declarations outside this field.
+		pos := st.Fields.Closing - 1
+		st.Fields.List = append(st.Fields.List, &ast.Field{
+			Names: []*ast.Ident{{NamePos: pos, Name: "Role"}},
+			Type:  &ast.StarExpr{Star: pos, X: &ast.Ident{NamePos: pos, Name: "string"}},
+			Tag:   &ast.BasicLit{ValuePos: pos, Kind: token.STRING, Value: "`json:\"role,omitempty\"`"},
+		})
+		return false
+	})
 }
 
 // renameSymbols replaces occurrences of conflicting identifiers throughout the

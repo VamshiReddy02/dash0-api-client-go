@@ -3137,6 +3137,7 @@ type MemberMetadata struct {
 // MemberSpec defines model for MemberSpec.
 type MemberSpec struct {
 	Display MemberDisplay `json:"display"`
+	Role    *string       `json:"role,omitempty"`
 }
 
 // MetricSample defines model for MetricSample.
