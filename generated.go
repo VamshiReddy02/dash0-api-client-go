@@ -5694,6 +5694,7 @@ type MemberInvitationSpec struct {
 type MemberLabels struct {
 	Dash0Comid       *string    `json:"dash0.com/id,omitempty"`
 	Dash0ComjoinedAt *time.Time `json:"dash0.com/joinedAt,omitempty"`
+	Dash0Comrole     *string    `json:"dash0.com/role,omitempty"`
 }
 
 // MemberMetadata defines model for MemberMetadata.
@@ -5705,7 +5706,6 @@ type MemberMetadata struct {
 // MemberSpec defines model for MemberSpec.
 type MemberSpec struct {
 	Display MemberDisplay `json:"display"`
-	Role    *string       `json:"role,omitempty"`
 }
 
 // MetricSample defines model for MetricSample.
