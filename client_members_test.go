@@ -16,10 +16,10 @@ func TestListMembersRoles(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = io.WriteString(w, `[
-			{"kind":"Dash0Member","metadata":{"name":"alice"},"spec":{"role":"admin","display":{"email":"alice@example.com"}}},
-			{"kind":"Dash0Member","metadata":{"name":"bob"},"spec":{"role":"basic_member","display":{"email":"bob@example.com"}}},
-			{"kind":"Dash0Member","metadata":{"name":"legacy"},"spec":{"display":{"email":"legacy@example.com"}}},
-			{"kind":"Dash0Member","metadata":{"name":"future"},"spec":{"role":"future_role","display":{"email":"future@example.com"}}}
+			{"kind":"Dash0Member","metadata":{"name":"alice","labels":{"dash0.com/id":"alice","dash0.com/role":"admin"}},"spec":{"display":{"email":"alice@example.com"}}},
+			{"kind":"Dash0Member","metadata":{"name":"bob","labels":{"dash0.com/id":"bob","dash0.com/role":"basic_member"}},"spec":{"display":{"email":"bob@example.com"}}},
+			{"kind":"Dash0Member","metadata":{"name":"legacy","labels":{"dash0.com/id":"legacy"}},"spec":{"display":{"email":"legacy@example.com"}}},
+			{"kind":"Dash0Member","metadata":{"name":"future","labels":{"dash0.com/id":"future","dash0.com/role":"future_role"}},"spec":{"display":{"email":"future@example.com"}}}
 		]`)
 	}))
 	defer server.Close()
@@ -37,12 +37,15 @@ func TestListMembersRoles(t *testing.T) {
 		t.Fatalf("got %d members, want %d", len(members), len(wantRoles))
 	}
 	for i, want := range wantRoles {
-		got := members[i].Spec.Role
+		if members[i].Metadata.Labels == nil {
+			t.Fatalf("member %d: missing labels", i)
+		}
+		got := members[i].Metadata.Labels.Dash0Comrole
 		if want == nil {
 			if got != nil {
 				t.Errorf("member %d: missing role decoded as %q", i, *got)
 			}
-			data, err := json.Marshal(members[i].Spec)
+			data, err := json.Marshal(members[i].Metadata.Labels)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -50,7 +53,7 @@ func TestListMembersRoles(t *testing.T) {
 			if err := json.Unmarshal(data, &fields); err != nil {
 				t.Fatal(err)
 			}
-			if _, exists := fields["role"]; exists {
+			if _, exists := fields["dash0.com/role"]; exists {
 				t.Error("absent role should remain omitted when marshaled")
 			}
 		} else if got == nil || *got != *want {
