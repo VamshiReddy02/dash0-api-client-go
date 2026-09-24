@@ -56,7 +56,12 @@ var symbolRenames = map[string]string{
 // constRenames maps short constant names to prefixed replacements. Unlike
 // symbolRenames (which apply globally), these are only applied to const
 // value specs to avoid renaming identically-named struct fields.
-var constRenames = map[string]string{}
+var constRenames = map[string]string{
+	// These trigger variable constants otherwise collide with schema type names.
+	"DarkplaneAutoApprovalDecision": "DarkplaneEvaluationTriggerVariableNameAutoApprovalDecision",
+	"DarkplaneAutoApprovalMode":     "DarkplaneEvaluationTriggerVariableNameAutoApprovalMode",
+	"DarkplaneProvider":             "DarkplaneEvaluationTriggerVariableNameProvider",
+}
 
 // deprecatedFields lists fields to remove from specific structs. Each entry
 // maps a struct type name to a set of field names whose doc comments contain
